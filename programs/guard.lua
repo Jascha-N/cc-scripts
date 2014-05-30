@@ -21,6 +21,7 @@ local function scan(radius)
 end
 
 local function search(space, orientation, target)
+    local r = space.radius
 
     local function successors(state)    
         local alternatives = {
@@ -33,7 +34,11 @@ local function search(space, orientation, target)
         }
         local succs = {}
         for _, d in ipairs(alternatives) do
-            if space[state.x + d.x][state.y + d.y][state.z + d.z] then
+            if state.x + d.x >= -r and state.x + d.x < -r and
+               state.y + d.y >= -r and state.y + d.y < -r and
+               state.z + d.z >= -r and state.z + d.z < -r and
+               space[state.x + d.x][state.y + d.y][state.z + d.z] 
+           then
                 local actions = {}
                 local newState = { x = state.x + d.x, y = state.y + d.y,
                     z = state.z + d.z, o = state.o }
@@ -76,17 +81,19 @@ local function search(space, orientation, target)
     end
 
     local function hash(state)
-        local radius = space.radius
-        local bits = math.ceil(math.log(radius * 2 + 1) / math.log(2))
+        --[[
+        local bits = math.ceil(math.log(r * 2 + 1) / math.log(2))
         
-        local x = bit.blshift(state.x + radius + 1, bits * 2)
-        local y = bit.blshift(state.y + radius + 1, bits)
-        local z = state.z + radius + 1
+        local x = bit.blshift(state.x + r + 1, bits * 2)
+        local y = bit.blshift(state.y + r + 1, bits)
+        local z = state.z + r + 1
         
         return bit.bor(x, bit.bor(y, z))
+        ]]
+        
+        return state.x .. "," .. state.y .. "," .. state.z
     end
-
-    local r = space.radius
+    
     if target.x > r or target.x < -r or 
        target.y > r or target.y < -r or 
        target.z > r or target.z < -r 
@@ -143,8 +150,8 @@ local function search(space, orientation, target)
     return nil    
 end
 
-local space = scan()
-local path = search(space, "+x", { x = 10, y = 0, z = 0 })
+local space = scan(1)
+local path = search(space, "+x", { x = 1, y = 0, z = 0 })
 if path then
     for _, a in ipairs(path) do
         turtle[a]()
