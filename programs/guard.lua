@@ -1,8 +1,7 @@
 local SCAN_RADIUS = 5
 local HASH_BITS   = math.ceil(math.log(SCAN_RADIUS * 2 + 1) / math.log(2))
 
-local DIR_POS_X, DIR_POS_Z, DIR_NEG_X, DIR_NEG_Z = 0, 1, 2, 3
-local DIR_MIN, DIR_MAX = DIR_POS_X, DIR_NEG_Z
+local DIR_POS_X, DIR_POS_Z, DIR_NEG_X, DIR_NEG_Z, DIR_COUNT = 0, 1, 2, 3, 4
 local SENSOR = peripheral.wrap("right")
 
 local function scan(radius)
@@ -59,15 +58,13 @@ local function search(space, startDir, target, heuristic)
                 elseif math.abs(delta.dir - state.dir) == 2 then
                     table.insert(actions, "back")
                 else 
-                    if delta.dir > state.dir or
-                       delta.dir == DIR_MIN and state.dir == DIR_MAX 
-                    then
+                    if delta.dir == (state.dir + 1) % DIR_COUNT then
                         table.insert(actions, "turnRight")
                     else
                         table.insert(actions, "turnLeft")
                     end
                     table.insert(actions, "forward")
-                    newState.dir = dir
+                    newState.dir = delta.dir
                 end
                 
                 table.insert(succs, { 
@@ -130,7 +127,7 @@ local function search(space, startDir, target, heuristic)
             if not closed[hash(s.state)] then
                 s.prev = node
                 s.cost = node.cost + #s.actions
-                s.estimate = s.cost + h(s, target)
+                s.estimate = s.cost + h(s.state, target)
                 local inserted = false
                 for i, n in ipairs(queue) do
                     if n.estimate > s.estimate then
