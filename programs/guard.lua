@@ -98,7 +98,7 @@ local function search(space, startDir, target, heuristic)
     end
 
     local initial = { 
-        state = { x = 0, y = 0, z = 0, dir = direction },
+        state = { x = 0, y = 0, z = 0, dir = startDir },
         actions = {},
         cost = 0,
         estimate = h(initial, target)
@@ -117,7 +117,7 @@ local function search(space, startDir, target, heuristic)
                 for index, action in ipairs(node.actions) do
                     table.insert(path, index, action)
                 end
-                print(node.state.o)
+                --print(node.state.dir)
                 node = node.prev                
             until not node
             
