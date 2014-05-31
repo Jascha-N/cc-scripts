@@ -1,5 +1,6 @@
-local SCAN_RADIUS = 5
-local HASH_BITS   = math.ceil(math.log(SCAN_RADIUS * 2 + 1) / math.log(2))
+local SCAN_RADIUS    = 5
+local HASH_BITS      = math.ceil(math.log(SCAN_RADIUS * 2 + 1) / math.log(2))
+local YIELD_INTERVAL = 5
 
 local DIR_POS_X, DIR_POS_Z, DIR_NEG_X, DIR_NEG_Z, DIR_COUNT = 0, 1, 2, 3, 4
 local SENSOR = peripheral.wrap("right")
@@ -83,16 +84,24 @@ local function search(space, startDir, target, heuristic)
         local z = state.z + r + 1
         
         return bit.bor(x, bit.bor(y, z))
-        
-        --return state.x .. "," .. state.y .. "," .. state.z
     end
     
-    if target.x > r or target.x < -r or 
-       target.y > r or target.y < -r or 
-       target.z > r or target.z < -r 
-    then
-        return nil
+    local function extractPath(node)
+        local path = {}
+        repeat
+            for index, action in ipairs(node.actions) do
+                table.insert(path, index, action)
+            end
+            node = node.prev                
+        until not node
+        
+        return path
     end
+    
+    assert(target.x > r or target.x < -r or 
+           target.y > r or target.y < -r or 
+           target.z > r or target.z < -r,
+           "target out of range")
 
     local initial = { 
         state = { x = 0, y = 0, z = 0, dir = startDir },
@@ -100,26 +109,25 @@ local function search(space, startDir, target, heuristic)
         cost = 0,
     }
     initial.estimate = h(initial.state, target)
+    local best = initial
     
     local queue = { initial }
     local closed = { [hash(initial.state)] = true }
-    local count = 0
+    local lastTime = os.clock()
     repeat    
         local node = table.remove(queue, 1)
         if node.state.x == target.x and
            node.state.y == target.y and
            node.state.z == target.z 
         then
-            local path = {}
-            repeat
-                for index, action in ipairs(node.actions) do
-                    table.insert(path, index, action)
-                end
-                --print(node.state.dir)
-                node = node.prev                
-            until not node
-            
+            local path = extractPath(node)
+            path.partial = false
             return path
+        elseif node.estimate < best.estimate or
+               node.estimate == best.estimate and
+               node.cost < best.cost
+        then
+            best = node
         end
         
         closed[hash(node.state)] = true
@@ -128,10 +136,10 @@ local function search(space, startDir, target, heuristic)
             if not closed[hash(s.state)] then
                 s.prev = node
                 s.cost = node.cost + #s.actions
-                s.estimate = s.cost + h(s.state, target)
+                s.estimate = h(s.state, target)
                 local inserted = false
                 for i, n in ipairs(queue) do
-                    if n.estimate > s.estimate then
+                    if n.cost + n.estimate > s.cost + s.estimate then
                         table.insert(queue, i, s)
                         inserted = true
                         break
@@ -142,24 +150,20 @@ local function search(space, startDir, target, heuristic)
                 end
             end
         end
+        
+        local t = os.clock()
+        if t >= lastTime + YIELD_INTERVAL then
+            sleep(0)
+            lastTime = t
+        end        
     until #queue == 0
     
-    return nil    
+    local path = extractPath(node)
+    path.partial = true
+    return path   
 end
 
 local space = scan(SCAN_RADIUS)
-
---[[
-for y = -1, 1 do
-  for x = -1, 1 do
-    local s = ""
-    for z = -1, 1 do
-      s = s .. (space[x][y][z] and " " or space[x][y][z] == nil and "?" or "X")
-    end
-    print(s)
-  end
-end
-]]
 
 local function manhattan(state, target)
     return math.abs(state.x - target.x) +
