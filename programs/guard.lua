@@ -98,9 +98,9 @@ local function search(space, startDir, target, heuristic)
         return path
     end
     
-    assert(target.x > r or target.x < -r or 
-           target.y > r or target.y < -r or 
-           target.z > r or target.z < -r,
+    assert(target.x >= -r and target.x <= r and
+           target.y >= -r and target.y <= r and
+           target.z >= -r and target.z <= r,
            "target out of range")
 
     local initial = { 
