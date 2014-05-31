@@ -4,7 +4,7 @@ local HASH_BITS   = math.ceil(math.log(SCAN_RADIUS * 2 + 1) / math.log(2))
 local DIR_POS_X, DIR_POS_Z, DIR_NEG_X, DIR_NEG_Z, DIR_COUNT = 0, 1, 2, 3, 4
 local SENSOR = peripheral.wrap("right")
 
-local function scan(radius)
+local function scan()
     radius = radius or 16
     local space = { radius = radius }
     for x = -radius, radius do
@@ -98,8 +98,9 @@ local function search(space, startDir, target, heuristic)
         state = { x = 0, y = 0, z = 0, dir = startDir },
         actions = {},
         cost = 0,
-        estimate = h(initial, target)
     }
+    initial.estimate = h(initial.state, target)
+    
     local queue = { initial }
     local closed = { [hash(initial.state)] = true }
     local count = 0
@@ -160,7 +161,13 @@ for y = -1, 1 do
 end
 ]]
 
-local path = search(space, DIR_POS_X, { x = -5, y = 0, z = 0 })
+local function manhattan(state, target)
+    return math.abs(state.x - target.x) +
+           math.abs(state.y - target.y) +
+           math.abs(state.z - target.z)
+end
+     
+local path = search(space, DIR_POS_X, { x = -5, y = 0, z = 0 }, manhattan)
 if path then
     for _, a in ipairs(path) do
         print(a)
