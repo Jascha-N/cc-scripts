@@ -4,9 +4,9 @@ if turtle.getFuelLevel() < 50 then
   local oldFuelLevel = turtle.getFuelLevel()
   while oldFuelLevel <= turtle.getFuelLevel() do
     os.sleep(1)
+    turtle.refuel()
   end
   print('Mmmh, thank you master!')
-  turtle.refuel()
 end
  
 -- Move under the tree
