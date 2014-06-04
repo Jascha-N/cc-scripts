@@ -32,16 +32,16 @@ if turtle.compare() then
 end
 turtle.back()
  
+local layer = 0
+
 function ensureFuel()
-  while (turtle.getItemCount(1) > 0) and (turtle.getFuelLevel() < 100) do
+  while (turtle.getItemCount(1) > 0) and (turtle.getFuelLevel() < 100 + layer) do
     turtle.refuel(1)
   end
 end
  
 local continue = true
-local layer = 0
 while continue do
-  ensureFuel()
   if isStarTree then
     for dir = 1,4 do
       turtle.dig()
@@ -62,12 +62,13 @@ while continue do
     turtle.up()
     layer = layer + 1
   end
+
+  ensureFuel()
 end
  
 print("I am done... returning...")
  
 for layerIndex = 1,layer do
-  ensureFuel()
   turtle.down()
 end
  
